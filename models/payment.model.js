@@ -34,3 +34,10 @@ export const Payments = sequelize.define(
     timestamps: false,
   }
 );
+
+Payments.associate = (models) => {
+  Payments.belongsTo(models.Contracts, {
+    foreignKey: "contract_id",
+    as: "contract",
+  });
+};

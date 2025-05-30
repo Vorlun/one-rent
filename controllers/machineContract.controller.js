@@ -1,19 +1,27 @@
 import { Contracts } from "../models/contract.model.js";
 import { Machines } from "../models/machines.model.js";
+import { MachinesContract } from "../models/machine_contract.model.js";
 import { MachineTypes } from "../models/machineTypes.model.js";
 import { Users } from "../models/users.model.js";
 
-const findById = async (id) => {
-  return await Contracts.findByPk(id, {
+// Helper: topish
+const findByIds = async (machine_id, contract_id) => {
+  return await MachinesContract.findOne({
+    where: { machine_id, contract_id },
     include: [
       {
-        model: Users,
-        as: "customer",
-        attributes: ["id", "full_name", "email", "phone", "role"],
+        model: Contracts,
+        attributes: ["id", "start_time", "end_time", "total_price", "status"],
+        include: [
+          {
+            model: Users,
+            as: "customer",
+            attributes: ["id", "full_name", "email", "phone"],
+          },
+        ],
       },
       {
         model: Machines,
-        as: "machine",
         attributes: ["id", "name", "location", "price_per_hour", "status"],
         include: [
           {
@@ -32,40 +40,60 @@ const findById = async (id) => {
   });
 };
 
-
+// Create
 export const create = async (req, res, next) => {
   try {
-    const contract = await Contracts.create(req.body);
+    const newRecord = await MachinesContract.create(req.body);
 
     res.status(201).json({
       success: true,
-      message: "Contract created successfully",
-      data: contract,
+      message: "Machine-Contract relation created successfully",
+      data: newRecord,
     });
   } catch (error) {
     next(error);
   }
 };
 
+// Get all with pagination
 export const getAll = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
 
-    const { count, rows } = await Contracts.findAndCountAll({
-      order: [["created_at", "DESC"]],
+    const { count, rows } = await MachinesContract.findAndCountAll({
       limit,
       offset,
+    });
+
+    res.status(200).json({
+      success: true,
+      meta: {
+        totalItems: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        limit,
         include: [
           {
-            model: Users,
-            as: "customer",
-            attributes: ["id", "full_name", "email", "phone", "role"],
+            model: Contracts,
+            attributes: [
+              "id",
+              "start_time",
+              "end_time",
+              "total_price",
+              "status",
+            ],
+            include: [
+              {
+                model: Users,
+                as: "customer",
+                attributes: ["id", "full_name", "email", "phone"],
+              },
+            ],
           },
           {
             model: Machines,
-            as: "machine",
             attributes: ["id", "name", "location", "price_per_hour", "status"],
             include: [
               {
@@ -81,16 +109,6 @@ export const getAll = async (req, res, next) => {
             ],
           },
         ],
-      
-    });
-
-    res.status(200).json({
-      success: true,
-      meta: {
-        totalItems: count,
-        totalPages: Math.ceil(count / limit),
-        currentPage: page,
-        limit,
       },
       data: rows,
     });
@@ -99,68 +117,71 @@ export const getAll = async (req, res, next) => {
   }
 };
 
+// Get one
 export const getOne = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const contract = await findById(id);
+    const { machine_id, contract_id } = req.params;
+    const record = await findByIds(machine_id, contract_id);
 
-    if (!contract) {
+    if (!record) {
       return res.status(404).json({
         success: false,
-        message: "Contract not found",
+        message: "Record not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: contract,
+      data: record,
     });
   } catch (error) {
     next(error);
   }
 };
 
+// Update
 export const update = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const contract = await findById(id);
+    const { machine_id, contract_id } = req.params;
+    const record = await findByIds(machine_id, contract_id);
 
-    if (!contract) {
+    if (!record) {
       return res.status(404).json({
         success: false,
-        message: "Contract not found",
+        message: "Record not found",
       });
     }
 
-    await contract.update(req.body);
+    await record.update(req.body);
 
     res.status(200).json({
       success: true,
-      message: "Contract updated successfully",
-      data: contract,
+      message: "Record updated successfully",
+      data: record,
     });
   } catch (error) {
     next(error);
   }
 };
 
+// Delete
 export const remove = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const contract = await findById(id);
+    const { machine_id, contract_id } = req.params;
+    const record = await findByIds(machine_id, contract_id);
 
-    if (!contract) {
+    if (!record) {
       return res.status(404).json({
         success: false,
-        message: "Contract not found",
+        message: "Record not found",
       });
     }
 
-    await contract.destroy();
+    await record.destroy();
 
     res.status(200).json({
       success: true,
-      message: "Contract deleted successfully",
+      message: "Record deleted successfully",
     });
   } catch (error) {
     next(error);

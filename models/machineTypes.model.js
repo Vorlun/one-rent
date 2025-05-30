@@ -1,20 +1,22 @@
-import sequelize from "../config/db.js";
 import { DataTypes } from "sequelize";
+import sequelize from "../config/db.js";
 
-export const MachineTypes = sequelize.define("MachineTypes", {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
+export const MachineTypes = sequelize.define(
+  "MachineTypes",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    type_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
-  name: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-  },
-  description: {
-    type: DataTypes.TEXT,
-  },
-},{
-    freezeTableName:true,
-    timestamps:false,
-});
+  {
+    tableName: "machine_types",
+    timestamps: false,
+    freezeTableName: true,
+  }
+);

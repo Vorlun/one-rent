@@ -46,3 +46,22 @@ export const Reviews = sequelize.define(
     timestamps: false,
   }
 );
+
+
+
+Reviews.associate = (models) => {
+  Reviews.belongsTo(models.Machines, {
+    foreignKey: "machine_id",
+    as: "machine",
+  });
+
+  Reviews.belongsTo(models.Users, {
+    foreignKey: "customer_id",
+    as: "customer",
+  });
+
+  Reviews.belongsTo(models.MachineTypes, {
+    foreignKey: "type",
+    as: "machine_type", // optional
+  });
+};

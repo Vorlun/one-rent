@@ -1,7 +1,32 @@
 import { Reviews } from "../models/review.model.js";
 
 const findById = async (id) => {
-  return await Reviews.findByPk(id);
+  return await Reviews.findByPk(id, {
+    include: [
+      {
+        model: Users,
+        as: "customer",
+        attributes: ["id", "full_name", "email", "phone", "role"],
+      },
+      {
+        model: Machines,
+        as: "machine",
+        attributes: ["id", "name", "location", "price_per_hour", "status"],
+        include: [
+          {
+            model: Users,
+            as: "owner",
+            attributes: ["id", "full_name", "email", "phone"],
+          },
+          {
+            model: MachineTypes,
+            as: "machine_type",
+            attributes: ["id", "name"],
+          },
+        ],
+      },
+    ],
+  });
 };
 
 export const create = async (req, res, next) => {
@@ -28,6 +53,30 @@ export const getAll = async (req, res, next) => {
       order: [["created_at", "DESC"]],
       limit,
       offset,
+      include: [
+        {
+          model: Users,
+          as: "customer",
+          attributes: ["id", "full_name", "email", "phone", "role"],
+        },
+        {
+          model: Machines,
+          as: "machine",
+          attributes: ["id", "name", "location", "price_per_hour", "status"],
+          include: [
+            {
+              model: Users,
+              as: "owner",
+              attributes: ["id", "full_name", "email", "phone"],
+            },
+            {
+              model: MachineTypes,
+              as: "machine_type",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
+      ],
     });
 
     res.status(200).json({

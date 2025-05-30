@@ -1,19 +1,43 @@
 import { MachineTypes } from "../models/machineTypes.model.js";
+import { Machines } from "../models/machines.model.js";
+import { Users } from "../models/users.model.js";
 
 const findById = async (id) => {
-  return await MachineTypes.findByPk(id);
+  return await MachineTypes.findByPk(id, {
+    include: [
+      {
+        model: Machines,
+        as: "machines",
+        attributes: ["id", "name", "location", "price_per_hour", "status"],
+        include: [
+          {
+            model: Users,
+            as: "owner",
+            attributes: ["id", "full_name", "email", "phone"],
+          },
+        ],
+      },
+    ],
+  });
 };
 
 export const create = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { type_name } = req.body;
 
-    const newMachineType = await MachineTypes.create({ name, description });
+    if (!type_name) {
+      return res.status(400).json({
+        success: false,
+        message: "Type name is required",
+      });
+    }
+
+    const newType = await MachineTypes.create({ type_name });
 
     res.status(201).json({
       success: true,
       message: "Machine type created successfully",
-      data: newMachineType,
+      data: newType,
     });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
@@ -56,8 +80,8 @@ export const getAll = async (req, res, next) => {
 export const getOne = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const machineType = await findById(id);
+
     if (!machineType) {
       return res.status(404).json({
         success: false,
@@ -77,9 +101,9 @@ export const getOne = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { type_name } = req.body;
 
-    const machineType = await findById(id);
+    const machineType = await MachineTypes.findByPk(id);
     if (!machineType) {
       return res.status(404).json({
         success: false,
@@ -88,8 +112,7 @@ export const update = async (req, res, next) => {
     }
 
     await machineType.update({
-      name: name ?? machineType.name,
-      description: description ?? machineType.description,
+      type_name: type_name ?? machineType.type_name,
     });
 
     res.status(200).json({
@@ -112,7 +135,7 @@ export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const machineType = await findById(id);
+    const machineType = await MachineTypes.findByPk(id);
     if (!machineType) {
       return res.status(404).json({
         success: false,

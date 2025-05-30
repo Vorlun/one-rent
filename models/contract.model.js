@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
+import { Users } from "./users.model.js";
 
 export const Contracts = sequelize.define(
   "Contracts",
@@ -13,15 +14,7 @@ export const Contracts = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Users",
-        key: "id",
-      },
-    },
-    machine_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Machines",
+        model: "users", // kichik harf bilan
         key: "id",
       },
     },
@@ -56,6 +49,8 @@ export const Contracts = sequelize.define(
     },
   },
   {
+    tableName: "contracts",
     timestamps: false,
+    freezeTableName: true,
   }
 );

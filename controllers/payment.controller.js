@@ -1,7 +1,21 @@
 import { Payments } from "../models/payment.model.js";
 
 const findById = async (id) => {
-  return await Payments.findByPk(id);
+  return await Payments.findByPk(id, {
+    include: [
+      {
+        model: Contracts,
+        attributes: ["id", "start_time", "end_time", "total_price", "status"],
+        include: [
+          {
+            model: Users,
+            as: "customer",
+            attributes: ["id", "full_name", "email", "phone"],
+          },
+        ],
+      },
+    ],
+  });
 };
 
 export const create = async (req, res, next) => {
@@ -37,6 +51,25 @@ export const getAll = async (req, res, next) => {
         totalPages: Math.ceil(count / limit),
         currentPage: page,
         limit,
+        include: [
+          {
+            model: Contracts,
+            attributes: [
+              "id",
+              "start_time",
+              "end_time",
+              "total_price",
+              "status",
+            ],
+            include: [
+              {
+                model: Users,
+                as: "customer",
+                attributes: ["id", "full_name", "email", "phone"],
+              },
+            ],
+          },
+        ],
       },
       data: rows,
     });

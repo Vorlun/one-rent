@@ -1,16 +1,20 @@
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import { Users } from "../models/users.model.js";
 
+// Foydalanuvchini ID bo‘yicha topish
 const findById = async (id) => {
   return await Users.findByPk(id);
 };
 
+// Foydalanuvchi yaratish
 export const create = async (req, res, next) => {
   try {
     const { full_name, email, password, phone, role } = req.body;
 
+    // Parolni hash qilish
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Foydalanuvchi yaratish
     const newUser = await Users.create({
       full_name,
       email,
@@ -19,6 +23,7 @@ export const create = async (req, res, next) => {
       role,
     });
 
+    // Javob yuborish (passwordni ko‘rsatmaymiz)
     res.status(201).json({
       success: true,
       message: "User created successfully",
@@ -28,9 +33,11 @@ export const create = async (req, res, next) => {
         email: newUser.email,
         phone: newUser.phone,
         role: newUser.role,
+        created_at: newUser.created_at,
       },
     });
   } catch (error) {
+    // Unikal constraint xatosi (email yoki phone)
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -41,6 +48,7 @@ export const create = async (req, res, next) => {
   }
 };
 
+// Barcha foydalanuvchilarni olish (pagination bilan)
 export const getAll = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -48,7 +56,7 @@ export const getAll = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Users.findAndCountAll({
-      attributes: { exclude: ["password"] },
+      attributes: { exclude: ["password"] }, // passwordni chiqarib tashlaymiz
       order: [["id", "ASC"]],
       limit,
       offset,
@@ -69,6 +77,7 @@ export const getAll = async (req, res, next) => {
   }
 };
 
+// Bitta foydalanuvchini olish (ID bo‘yicha)
 export const getOne = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -81,6 +90,7 @@ export const getOne = async (req, res, next) => {
       });
     }
 
+    // passwordni olib tashlash
     const { password, ...userData } = user.toJSON();
 
     res.status(200).json({
@@ -92,6 +102,7 @@ export const getOne = async (req, res, next) => {
   }
 };
 
+// Foydalanuvchini yangilash
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -105,6 +116,7 @@ export const update = async (req, res, next) => {
       });
     }
 
+    // Yangilash uchun maydonlar
     const updatedFields = {
       full_name: full_name ?? user.full_name,
       email: email ?? user.email,
@@ -112,12 +124,15 @@ export const update = async (req, res, next) => {
       role: role ?? user.role,
     };
 
+    // Agar parol yuborilgan bo‘lsa, hash qilamiz
     if (password) {
       updatedFields.password = await bcrypt.hash(password, 10);
     }
 
+    // Yangilashni amalga oshiramiz
     await user.update(updatedFields);
 
+    // passwordni olib tashlaymiz
     const { password: pw, ...updatedUser } = user.toJSON();
 
     res.status(200).json({
@@ -126,6 +141,7 @@ export const update = async (req, res, next) => {
       data: updatedUser,
     });
   } catch (error) {
+    // Unique constraint xatosi uchun alohida javob
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -136,6 +152,7 @@ export const update = async (req, res, next) => {
   }
 };
 
+// Foydalanuvchini o‘chirish
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;

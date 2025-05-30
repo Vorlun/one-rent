@@ -1,6 +1,5 @@
 import Joi from "joi";
 
-// CREATE VALIDATION
 export const createUsersSchema = Joi.object({
   full_name: Joi.string().min(3).max(100).required().messages({
     "string.empty": `"full_name" maydon bo'sh bo'lmasligi kerak`,

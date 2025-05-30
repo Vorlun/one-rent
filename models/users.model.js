@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
-const Users = sequelize.define(
+export const Users = sequelize.define(
   "Users",
   {
     id: {
@@ -9,49 +9,59 @@ const Users = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-
     full_name: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
-        notEmpty: true,
-        len: [3, 100],
+        notEmpty: { msg: "Full name is required" },
+        len: {
+          args: [3, 100],
+          msg: "Full name must be between 3 and 100 characters",
+        },
       },
     },
-
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
+      unique: {
+        name: "unique_email",
+        msg: "Email address already in use",
+      },
       validate: {
-        isEmail: true,
+        isEmail: { msg: "Email address must be valid" },
+        notEmpty: { msg: "Email is required" },
       },
     },
-
     password: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
-        len: [6, 100],
+        len: {
+          args: [6, 100],
+          msg: "Password length should be between 6 and 100 characters",
+        },
       },
     },
-
     phone: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(15),
       allowNull: false,
-      unique: true,
+      unique: {
+        name: "unique_phone",
+        msg: "Phone number already in use",
+      },
       validate: {
-        notEmpty: true,
-        is: /^\+998\d{9}$/i, 
+        notEmpty: { msg: "Phone number is required" },
+        is: {
+          args: /^\+998\d{9}$/,
+          msg: "Phone number must match +998XXXXXXXXX format",
+        },
       },
     },
-
     role: {
       type: DataTypes.ENUM("admin", "manager", "operator", "user"),
       allowNull: false,
       defaultValue: "user",
     },
-
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -62,7 +72,6 @@ const Users = sequelize.define(
     tableName: "users",
     timestamps: false,
     underscored: true,
+    freezeTableName: true,
   }
 );
-
-export default Users;

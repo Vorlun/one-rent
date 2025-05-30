@@ -5,12 +5,12 @@ import {
   remove,
   getAll,
   getOne,
-} from "../controllers/user.controller.js";
+} from "../controllers/users.controller.js";
 
 import {
-  createUserSchema,
-  updateUserSchema,
-} from "../validations/user.validation.js";
+  createUsersSchema,
+  updateUsersSchema,
+} from "../validations/users.validation.js";
 
 import { validateBody, validateParams } from "../middlewares/validate.js";
 import { idParamSchema } from "../validations/id_param.validation.js";
@@ -19,7 +19,7 @@ const router = Router();
 
 router
   .route("/")
-  .post(validateBody(createUserSchema), create)
+  .post(validateBody(createUsersSchema), create)
   .get(getAll);
 
 router
@@ -27,7 +27,7 @@ router
   .get(validateParams(idParamSchema), getOne)
   .put(
     validateParams(idParamSchema),
-    validateBody(updateUserSchema),
+    validateBody(updateUsersSchema),
     update
   )
   .delete(validateParams(idParamSchema), remove);
