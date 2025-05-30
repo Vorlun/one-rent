@@ -13,7 +13,7 @@ const findById = async (id) => {
       },
       {
         model: Machines,
-        as: "machine",
+        as: "machines",
         attributes: ["id", "name", "location", "price_per_hour", "status"],
         include: [
           {
@@ -23,8 +23,8 @@ const findById = async (id) => {
           },
           {
             model: MachineTypes,
-            as: "machine_type",
-            attributes: ["id", "name"],
+            as: "machine_type", 
+            attributes: ["id", "type_name"],
           },
         ],
       },
@@ -32,11 +32,9 @@ const findById = async (id) => {
   });
 };
 
-
 export const create = async (req, res, next) => {
   try {
     const contract = await Contracts.create(req.body);
-
     res.status(201).json({
       success: true,
       message: "Contract created successfully",
@@ -57,31 +55,30 @@ export const getAll = async (req, res, next) => {
       order: [["created_at", "DESC"]],
       limit,
       offset,
-        include: [
-          {
-            model: Users,
-            as: "customer",
-            attributes: ["id", "full_name", "email", "phone", "role"],
-          },
-          {
-            model: Machines,
-            as: "machine",
-            attributes: ["id", "name", "location", "price_per_hour", "status"],
-            include: [
-              {
-                model: Users,
-                as: "owner",
-                attributes: ["id", "full_name", "email", "phone"],
-              },
-              {
-                model: MachineTypes,
-                as: "machine_type",
-                attributes: ["id", "name"],
-              },
-            ],
-          },
-        ],
-      
+      include: [
+        {
+          model: Users,
+          as: "customer", 
+          attributes: ["id", "full_name", "email", "phone", "role"],
+        },
+        {
+          model: Machines,
+          as: "machines", 
+          attributes: ["id", "name", "location", "price_per_hour", "status"],
+          include: [
+            {
+              model: Users,
+              as: "owner",
+              attributes: ["id", "full_name", "email", "phone"],
+            },
+            {
+              model: MachineTypes,
+              as: "machine_type",
+              attributes: ["id", "type_name"],
+            },
+          ],
+        },
+      ],
     });
 
     res.status(200).json({
@@ -105,16 +102,10 @@ export const getOne = async (req, res, next) => {
     const contract = await findById(id);
 
     if (!contract) {
-      return res.status(404).json({
-        success: false,
-        message: "Contract not found",
-      });
+      return res.status(404).json({ success: false, message: "Not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: contract,
-    });
+    res.status(200).json({ success: true, data: contract });
   } catch (error) {
     next(error);
   }
@@ -123,22 +114,13 @@ export const getOne = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const contract = await findById(id);
-
+    const contract = await Contracts.findByPk(id);
     if (!contract) {
-      return res.status(404).json({
-        success: false,
-        message: "Contract not found",
-      });
+      return res.status(404).json({ success: false, message: "Not found" });
     }
 
     await contract.update(req.body);
-
-    res.status(200).json({
-      success: true,
-      message: "Contract updated successfully",
-      data: contract,
-    });
+    res.status(200).json({ success: true, message: "Updated", data: contract });
   } catch (error) {
     next(error);
   }
@@ -147,21 +129,13 @@ export const update = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const contract = await findById(id);
-
+    const contract = await Contracts.findByPk(id);
     if (!contract) {
-      return res.status(404).json({
-        success: false,
-        message: "Contract not found",
-      });
+      return res.status(404).json({ success: false, message: "Not found" });
     }
 
     await contract.destroy();
-
-    res.status(200).json({
-      success: true,
-      message: "Contract deleted successfully",
-    });
+    res.status(200).json({ success: true, message: "Deleted" });
   } catch (error) {
     next(error);
   }

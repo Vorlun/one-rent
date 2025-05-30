@@ -17,19 +17,12 @@ import { idParamSchema } from "../validations/id_param.validation.js";
 
 const router = Router();
 
-router
-  .route("/")
-  .post(validateBody(createReviewSchema), create)
-  .get(getAll);
+router.route("/").post(validateBody(createReviewSchema), create).get(getAll);
 
 router
   .route("/:id")
   .get(validateParams(idParamSchema), getOne)
-  .put(
-    validateParams(idParamSchema),
-    validateBody(updateReviewSchema),
-    update
-  )
+  .put(validateParams(idParamSchema), validateBody(updateReviewSchema), update)
   .delete(validateParams(idParamSchema), remove);
 
 export default router;

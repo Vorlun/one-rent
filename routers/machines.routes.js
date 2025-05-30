@@ -5,6 +5,7 @@ import {
   remove,
   getAll,
   getOne,
+  highRatingMachines,
 } from "../controllers/machines.controller.js";
 
 import {
@@ -18,6 +19,8 @@ import { idParamSchema } from "../validations/id_param.validation.js";
 const router = Router();
 
 router.route("/").post(validateBody(createMachineSchema), create).get(getAll);
+
+router.get("/high", highRatingMachines)
 
 router
   .route("/:id")

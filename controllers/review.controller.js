@@ -1,4 +1,7 @@
 import { Reviews } from "../models/review.model.js";
+import { Users } from "../models/users.model.js";
+import { Machines } from "../models/machines.model.js"; 
+import { MachineTypes } from "../models/machineTypes.model.js";
 
 const findById = async (id) => {
   return await Reviews.findByPk(id, {
@@ -10,7 +13,7 @@ const findById = async (id) => {
       },
       {
         model: Machines,
-        as: "machine",
+        as: "machines",
         attributes: ["id", "name", "location", "price_per_hour", "status"],
         include: [
           {
@@ -21,7 +24,7 @@ const findById = async (id) => {
           {
             model: MachineTypes,
             as: "machine_type",
-            attributes: ["id", "name"],
+            attributes: ["id", "type_name"],
           },
         ],
       },
@@ -61,7 +64,7 @@ export const getAll = async (req, res, next) => {
         },
         {
           model: Machines,
-          as: "machine",
+          as: "machines",
           attributes: ["id", "name", "location", "price_per_hour", "status"],
           include: [
             {
@@ -72,7 +75,7 @@ export const getAll = async (req, res, next) => {
             {
               model: MachineTypes,
               as: "machine_type",
-              attributes: ["id", "name"],
+              attributes: ["id", "type_name"],
             },
           ],
         },

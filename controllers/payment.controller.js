@@ -1,10 +1,14 @@
 import { Payments } from "../models/payment.model.js";
+import { Contracts } from "../models/contract.model.js";
+import { Users } from "../models/users.model.js";
 
+// Yordamchi: id bo'yicha to'lovni topish va tegishli bog'lanmalarni qo'shish
 const findById = async (id) => {
   return await Payments.findByPk(id, {
     include: [
       {
         model: Contracts,
+        as: "contract",
         attributes: ["id", "start_time", "end_time", "total_price", "status"],
         include: [
           {
@@ -18,9 +22,33 @@ const findById = async (id) => {
   });
 };
 
+// CREATE - yangi to'lov yaratish
 export const create = async (req, res, next) => {
   try {
-    const payment = await Payments.create(req.body);
+    const { contract_id, amount, method, paid_at } = req.body;
+
+    if (!contract_id || !amount || !method) {
+      return res.status(400).json({
+        success: false,
+        message: "contract_id, amount va method maydonlari majburiy.",
+      });
+    }
+
+    // OPTIONAL: contract_id mavjudligini tekshirish
+    const contract = await Contracts.findByPk(contract_id);
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        message: "Berilgan contract_id bo'yicha shartnoma topilmadi.",
+      });
+    }
+
+    const payment = await Payments.create({
+      contract_id,
+      amount,
+      method,
+      paid_at: paid_at || new Date(),
+    });
 
     res.status(201).json({
       success: true,
@@ -32,6 +60,7 @@ export const create = async (req, res, next) => {
   }
 };
 
+// READ ALL - barcha to'lovlarni pagination bilan olish
 export const getAll = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -42,6 +71,20 @@ export const getAll = async (req, res, next) => {
       order: [["paid_at", "DESC"]],
       limit,
       offset,
+      include: [
+        {
+          model: Contracts,
+          as: "contract",
+          attributes: ["id", "start_time", "end_time", "total_price", "status"],
+          include: [
+            {
+              model: Users,
+              as: "customer",
+              attributes: ["id", "full_name", "email", "phone"],
+            },
+          ],
+        },
+      ],
     });
 
     res.status(200).json({
@@ -51,25 +94,6 @@ export const getAll = async (req, res, next) => {
         totalPages: Math.ceil(count / limit),
         currentPage: page,
         limit,
-        include: [
-          {
-            model: Contracts,
-            attributes: [
-              "id",
-              "start_time",
-              "end_time",
-              "total_price",
-              "status",
-            ],
-            include: [
-              {
-                model: Users,
-                as: "customer",
-                attributes: ["id", "full_name", "email", "phone"],
-              },
-            ],
-          },
-        ],
       },
       data: rows,
     });
@@ -78,9 +102,11 @@ export const getAll = async (req, res, next) => {
   }
 };
 
+// READ ONE - ID bo'yicha bitta to'lovni olish
 export const getOne = async (req, res, next) => {
   try {
     const { id } = req.params;
+
     const payment = await findById(id);
 
     if (!payment) {
@@ -99,16 +125,28 @@ export const getOne = async (req, res, next) => {
   }
 };
 
+// UPDATE - ID bo'yicha to'lovni yangilash
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const payment = await findById(id);
 
+    const payment = await findById(id);
     if (!payment) {
       return res.status(404).json({
         success: false,
         message: "Payment not found",
       });
+    }
+
+    // OPTIONAL: contract_id yangilanayotgan bo‘lsa, uning haqiqatan mavjudligini tekshirish
+    if (req.body.contract_id && req.body.contract_id !== payment.contract_id) {
+      const contract = await Contracts.findByPk(req.body.contract_id);
+      if (!contract) {
+        return res.status(404).json({
+          success: false,
+          message: "Yangi contract_id bo'yicha shartnoma topilmadi.",
+        });
+      }
     }
 
     await payment.update(req.body);
@@ -123,11 +161,12 @@ export const update = async (req, res, next) => {
   }
 };
 
+// DELETE - ID bo'yicha to'lovni o'chirish
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const payment = await findById(id);
 
+    const payment = await findById(id);
     if (!payment) {
       return res.status(404).json({
         success: false,

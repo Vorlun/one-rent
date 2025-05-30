@@ -1,11 +1,20 @@
-import sequelize from "../config/db.js";
-import { Users } from "./users.model.js";
 import { Machines } from "./machines.model.js";
-import { MachineTypes } from "./machineTypes.model.js";
-import { Contracts } from "./contract.model.js";
 import { MachinesContract } from "./machine_contract.model.js";
+import { Users } from "./users.model.js";
+import { MachineTypes } from "./machineTypes.model.js";
+import { Reviews } from "./review.model.js";
+import { Contracts } from "./contract.model.js";
+import { Payments } from "./payment.model.js";
 
-// 1. Users ↔ Machines (one-to-many)
+Users.hasMany(Contracts, {
+  foreignKey: "customer_id",
+  as: "contracts",
+});
+Contracts.belongsTo(Users, {
+  foreignKey: "customer_id",
+  as: "customer",
+});
+
 Users.hasMany(Machines, {
   foreignKey: "owner_id",
   as: "machines",
@@ -15,7 +24,6 @@ Machines.belongsTo(Users, {
   as: "owner",
 });
 
-// 2. MachineTypes ↔ Machines (one-to-many)
 MachineTypes.hasMany(Machines, {
   foreignKey: "type",
   as: "machines",
@@ -25,13 +33,6 @@ Machines.belongsTo(MachineTypes, {
   as: "machine_type",
 });
 
-// 3. Contracts ↔ Users (many-to-one)
-Contracts.belongsTo(Users, {
-  foreignKey: "customer_id",
-  as: "customer",
-});
-
-// 4. Contracts ↔ Machines (many-to-many via MachinesContract)
 Contracts.belongsToMany(Machines, {
   through: MachinesContract,
   foreignKey: "contract_id",
@@ -45,11 +46,34 @@ Machines.belongsToMany(Contracts, {
   as: "contracts",
 });
 
+Users.hasMany(Reviews, {
+  foreignKey: "customer_id",
+  as: "reviews",
+});
+Reviews.belongsTo(Users, {
+  foreignKey: "customer_id",
+  as: "customer",
+});
+
+Machines.hasMany(Reviews, {
+  foreignKey: "machine_id",
+  as: "reviews",
+});
+Reviews.belongsTo(Machines, {
+  foreignKey: "machine_id",
+  as: "machine",
+});
+
+Contracts.hasMany(Payments, { foreignKey: 'contract_id' });
+Payments.belongsTo(Contracts, { foreignKey: 'contract_id' });
+
+
 export {
-  sequelize,
-  Users,
-  Machines,
-  MachineTypes,
   Contracts,
+  Machines,
   MachinesContract,
+  Users,
+  MachineTypes,
+  Reviews,
+  Payments,
 };

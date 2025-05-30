@@ -5,12 +5,12 @@ import {
   remove,
   getAll,
   getOne,
-} from "../controllers/contract.controller.js";
+} from "../controllers/machineContract.controller.js";
 
 import {
-  createContractSchema,
-  updateContractSchema,
-} from "../validations/contract.validation.js";
+  createMachineContractSchema,
+  updateMachineContractSchema,
+} from "../validations/machineContract.validation.js";
 
 import { validateBody, validateParams } from "../middlewares/validate.js";
 import { idParamSchema } from "../validations/id_param.validation.js";
@@ -25,7 +25,7 @@ router
   .post(
     authGuard,
     requiredRoles(["admin", "manager"]),
-    validateBody(createContractSchema),
+    validateBody(createMachineContractSchema),
     create
   )
   .get(authGuard, requiredRoles(["admin", "manager"]), getAll);
@@ -37,7 +37,7 @@ router
     authGuard,
     requiredRoles(["admin", "manager"]),
     validateParams(idParamSchema),
-    validateBody(updateContractSchema),
+    validateBody(updateMachineContractSchema),
     update
   )
   .delete(

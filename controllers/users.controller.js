@@ -1,20 +1,16 @@
 import bcrypt from "bcrypt";
 import { Users } from "../models/users.model.js";
+import { Sequelize } from "sequelize";
 
-// Foydalanuvchini ID bo‘yicha topish
 const findById = async (id) => {
   return await Users.findByPk(id);
 };
 
-// Foydalanuvchi yaratish
 export const create = async (req, res, next) => {
   try {
     const { full_name, email, password, phone, role } = req.body;
-
-    // Parolni hash qilish
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Foydalanuvchi yaratish
     const newUser = await Users.create({
       full_name,
       email,
@@ -97,7 +93,6 @@ export const getOne = async (req, res, next) => {
   }
 };
 
-// Foydalanuvchini yangilash
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -111,7 +106,6 @@ export const update = async (req, res, next) => {
       });
     }
 
-    // Yangilash uchun maydonlar
     const updatedFields = {
       full_name: full_name ?? user.full_name,
       email: email ?? user.email,
@@ -119,15 +113,12 @@ export const update = async (req, res, next) => {
       role: role ?? user.role,
     };
 
-    // Agar parol yuborilgan bo‘lsa, hash qilamiz
     if (password) {
       updatedFields.password = await bcrypt.hash(password, 10);
     }
 
-    // Yangilashni amalga oshiramiz
     await user.update(updatedFields);
 
-    // passwordni olib tashlaymiz
     const { password: pw, ...updatedUser } = user.toJSON();
 
     res.status(200).json({
@@ -136,7 +127,6 @@ export const update = async (req, res, next) => {
       data: updatedUser,
     });
   } catch (error) {
-    // Unique constraint xatosi uchun alohida javob
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -147,7 +137,6 @@ export const update = async (req, res, next) => {
   }
 };
 
-// Foydalanuvchini o‘chirish
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -165,6 +154,70 @@ export const remove = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "User deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+export const getStats = async (req, res, next) => {
+  try {
+    const totalUsers = await Users.count();
+    const roles = await Users.findAll({
+      attributes: [
+        "role",
+        [Sequelize.fn("COUNT", Sequelize.col("role")), "count"],
+      ],
+      group: ["role"],
+    });
+
+    const latestUser = await Users.findOne({
+      order: [["created_at", "DESC"]],
+      attributes: { exclude: ["password"] },
+    });
+
+    const recentUsers = await Users.count({
+      where: {
+        created_at: {
+          [Sequelize.Op.gte]: Sequelize.literal("NOW() - INTERVAL '7 DAY'"),
+        },
+      },
+    });
+
+    const domainStats = await Users.findAll({
+      attributes: [
+        [
+          Sequelize.fn(
+            "substring",
+            Sequelize.col("email"),
+            Sequelize.literal("position('@' in email) + 1")
+          ),
+          "domain",
+        ],
+        [Sequelize.fn("COUNT", "*"), "count"],
+      ],
+      group: [
+        Sequelize.literal("substring(email from position('@' in email) + 1)"),
+      ],
+      order: [[Sequelize.literal("count"), "DESC"]],
+      limit: 5,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        roles: roles.map((r) => ({ role: r.role, count: r.dataValues.count })),
+        latestUser,
+        recentUsers,
+        topDomains: domainStats.map((d) => ({
+          domain: d.dataValues.domain,
+          count: d.dataValues.count,
+        })),
+      },
     });
   } catch (error) {
     next(error);

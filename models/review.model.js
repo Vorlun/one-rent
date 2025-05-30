@@ -1,5 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
+import { Users } from "./users.model.js"; // Users modelini import qilamiz
+import { Machines } from "./machines.model.js"; // Machines modelini import qilamiz
 
 export const Reviews = sequelize.define(
   "Reviews",
@@ -13,7 +15,7 @@ export const Reviews = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Users",
+        model: Users, // model obyekt sifatida beriladi
         key: "id",
       },
     },
@@ -21,7 +23,7 @@ export const Reviews = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Machines",
+        model: Machines, // model obyekt sifatida beriladi
         key: "id",
       },
     },
@@ -44,24 +46,8 @@ export const Reviews = sequelize.define(
   },
   {
     timestamps: false,
+    tableName: "reviews", // jadval nomini aniq belgilash
+    freezeTableName: true,
+    underscored: true,
   }
 );
-
-
-
-Reviews.associate = (models) => {
-  Reviews.belongsTo(models.Machines, {
-    foreignKey: "machine_id",
-    as: "machine",
-  });
-
-  Reviews.belongsTo(models.Users, {
-    foreignKey: "customer_id",
-    as: "customer",
-  });
-
-  Reviews.belongsTo(models.MachineTypes, {
-    foreignKey: "type",
-    as: "machine_type", // optional
-  });
-};

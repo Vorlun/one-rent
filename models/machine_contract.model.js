@@ -1,3 +1,4 @@
+// models/machine_contract.model.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
@@ -7,19 +8,11 @@ export const MachinesContract = sequelize.define(
     machine_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: "machines", // kichik harf bilan (jadval nomi)
-        key: "id",
-      },
       primaryKey: true,
     },
     contract_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: "contracts", // kichik harf bilan
-        key: "id",
-      },
       primaryKey: true,
     },
   },

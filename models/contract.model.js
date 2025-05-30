@@ -14,7 +14,7 @@ export const Contracts = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users", // kichik harf bilan
+        model: "users", 
         key: "id",
       },
     },

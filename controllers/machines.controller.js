@@ -1,10 +1,11 @@
 import { Machines } from "../models/machines.model.js";
 import { Users } from "../models/users.model.js";
 import { MachineTypes } from "../models/machineTypes.model.js";
+import { Sequelize } from "sequelize";
+
 
 export const create = async (req, res, next) => {
   try {
-    // owner_id va type mavjudligini tekshirish
     const userExists = await Users.findByPk(req.body.owner_id);
     if (!userExists) {
       return res.status(400).json({
@@ -150,6 +151,56 @@ export const remove = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Machine deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const highRatingMachines = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    const machines = await Machines.findAll({
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(
+              SELECT AVG("rating")
+              FROM "reviews"
+              WHERE "reviews"."machine_id" = "Machines"."id"
+            )`),
+            "average_rating",
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Users,
+          as: "owner",
+          attributes: ["id", "full_name", "email", "phone"],
+        },
+        {
+          model: MachineTypes,
+          as: "machine_type",
+          attributes: ["id", "type_name"],
+        },
+      ],
+      order: [[Sequelize.literal("average_rating"), "DESC"]],
+      limit,
+      offset,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "High-rated machines fetched successfully",
+      data: machines,
+      meta: {
+        limit,
+        page,
+      },
     });
   } catch (error) {
     next(error);
