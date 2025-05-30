@@ -1,3 +1,4 @@
+// models/users.model.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
@@ -61,6 +62,10 @@ export const Users = sequelize.define(
       type: DataTypes.ENUM("admin", "manager", "operator", "user"),
       allowNull: false,
       defaultValue: "user",
+    },
+    hashed_token: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,

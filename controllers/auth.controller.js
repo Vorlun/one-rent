@@ -1,119 +1,96 @@
 import { Users } from "../models/users.model.js";
 import bcrypt from "bcrypt";
 import { userJwtService } from "../services/jwt.service.js";
-import c from "config";
+import config from "config";
 
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await Users.findOne({
-      where: { email },
-      include: [
-        { model: Role, attributes: ["name"], through: { attributes: [] } },
-      ],
-    });
-    if (!user) {
-      return res.status(401).json({ message: "Email parol xato" });
-    }
+    const user = await Users.findOne({ where: { email } });
+    if (!user)
+      return res.status(401).json({ message: "Email yoki parol xato" });
 
-    const verify_password = bcrypt.compare(password, user.hashed_password);
-    if (!verify_password) {
-      return res.status(401).json({ message: "Email parol xato" });
-    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(401).json({ message: "Email yoki parol xato" });
 
-    const payload = {
-      id: user.id,
-      email: user.id,
-      roles: user.roles,
-    };
+    const payload = { id: user.id, email: user.email, role: user.role };
+    const tokens = userJwtService.generateTokens(payload);
 
-    const tokens = JwtService.generateTokens(payload);
-
-    const hashed_token = await bcrypt(tokens.refreshToken, 7)
-    user.hashed_token = hashed_token
-    await user.save()
+    const hashedRefresh = await bcrypt.hash(tokens.refreshToken, 7);
+    user.hashed_token = hashedRefresh;
+    await user.save();
 
     res.cookie("refreshToken", tokens.refreshToken, {
-      maxAge: c.get("maxAge"),
       httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: config.get("jwt.cookieMaxAge"),
     });
-    res.status(200).json({ message: "User login in" });
-  } catch (error) {
-    next(error);
+
+    res.status(200).json({
+      message: "Login muvaffaqiyatli",
+      accessToken: tokens.accessToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const refreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken)
+      return res.status(401).json({ message: "Token topilmadi" });
+
+    const decoded = userJwtService.verifyRefreshToken(refreshToken);
+    const user = await Users.findByPk(decoded.id);
+    if (!user)
+      return res.status(401).json({ message: "Foydalanuvchi topilmadi" });
+
+    const isValid = await bcrypt.compare(refreshToken, user.hashed_token);
+    if (!isValid) return res.status(401).json({ message: "Token noto'g'ri" });
+
+    const payload = { id: user.id, email: user.email };
+    const tokens = userJwtService.generateTokens(payload);
+
+    user.hashed_token = await bcrypt.hash(tokens.refreshToken, 7);
+    await user.save();
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: config.get("jwt.cookieMaxAge"),
+    });
+
+    res.status(200).json({
+      message: "Token yangilandi",
+      accessToken: tokens.accessToken,
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
 export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
+    if (!refreshToken)
+      return res.status(400).json({ message: "Token topilmadi" });
 
-    if (!refreshToken) {
-      return res
-        .status(400)
-        .send({ message: "Cookieda refresh token topilmadi" });
-    }
-    
-    const decodedToken = await JwtService.verifyRefreshToken(refreshToken)
-    
-    const user = await Users.update({refreshToken:null},{where: {id: decodedToken.id},returning:true});
-    
+    const decoded = userJwtService.verifyRefreshToken(refreshToken);
+    const user = await Users.findByPk(decoded.id);
+    if (!user)
+      return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
 
-    if (!user) {
-      return res.status(400).send({ message: "Token noto'g'ri" });
-    }
-
+    user.hashed_token = null;
+    await user.save();
 
     res.clearCookie("refreshToken");
-    res.send({ user });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const refreshToken = async (req, res, next) => {
-    const { refreshToken } = req.cookies;
-
-    if (!refreshToken) {
-      return res
-        .status(400)
-        .send({ message: "Cookieda refresh token topilmadi" });
-    }
-
-    await JwtService.verifyRefreshToken(refreshToken);
-
-    const user = await Users.update(
-      { refreshToken: null },
-      { where: { id: decodedToken.id }, returning: true }
-    );
-
-    if (!user) {
-      return res.status(400).send({ message: "Token noto'g'ri" });
-    }
-    const payload = {
-      id: author._id,
-      email: author.email,
-      is_active: author.is_active,
-      is_expert: author.is_expert,
-    };
-
-    const tokens = authorJwtService.generateTokens(payload);
-    author.refresh_token = tokens.refreshToken;
-    await author.save();
-
-    res.cookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      maxAge: config.get("cookie_refresh_time"),
-    });
-    res.status(201).send({
-      message: "Tokenlar yangilandi",
-      id: author.id,
-      accessToken: tokens.accessToken,
-    });
-
-
-  try {
-  } catch (error) {
-    next(error);
+    res.status(200).json({ message: "Logout muvaffaqiyatli" });
+  } catch (err) {
+    next(err);
   }
 };

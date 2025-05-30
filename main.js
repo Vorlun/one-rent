@@ -37,7 +37,7 @@ const PORT = config.get("port") || 3000;
     await sequelize.authenticate();
     console.log("Database connected successfully.");
 
-    await sequelize.sync({ force: true }); 
+    await sequelize.sync({ alter: true }); 
 
     app.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);

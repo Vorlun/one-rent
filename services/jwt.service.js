@@ -1,61 +1,43 @@
-const config = require("config");
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
+import config from "config";
 
 class JwtService {
-  constructor(accessKey, refreshKey, accessTime, refreshTime) {
-    this.accessKey = accessKey;
-    this.refreshKey = refreshKey;
-    this.accessTime = accessTime;
-    this.refreshTime = refreshTime;
+  constructor({
+    accessSecret,
+    refreshSecret,
+    accessExpiresIn,
+    refreshExpiresIn,
+  }) {
+    this.accessSecret = accessSecret;
+    this.refreshSecret = refreshSecret;
+    this.accessExpiresIn = accessExpiresIn;
+    this.refreshExpiresIn = refreshExpiresIn;
   }
 
   generateTokens(payload) {
-    const accessToken = jwt.sign(payload, this.accessKey, {
-      expiresIn: this.accessTime,
+    const accessToken = jwt.sign(payload, this.accessSecret, {
+      expiresIn: this.accessExpiresIn,
     });
 
-    const refreshToken = jwt.sign(payload, this.refreshKey, {
-      expiresIn: this.refreshTime,
+    const refreshToken = jwt.sign(payload, this.refreshSecret, {
+      expiresIn: this.refreshExpiresIn,
     });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
-  async verifyAccessToken(token) {
-    return jwt.verify(token, this.accessKey);
+  verifyAccessToken(token) {
+    return jwt.verify(token, this.accessSecret);
   }
 
-  async verifyRefreshToken(token) {
-    return jwt.verify(token, this.refreshKey);
+  verifyRefreshToken(token) {
+    return jwt.verify(token, this.refreshSecret);
   }
 }
 
-let authorJwtService = new JwtService(
-  config.get("access_key"),
-  config.get("refresh_key"),
-  config.get("access_time"),
-  config.get("refresh_time")
-);
-
-let adminJwtService = new JwtService(
-  config.get("adminAccess_key"),
-  config.get("adminRefresh_key"),
-  config.get("adminAccess_time"),
-  config.get("adminRefresh_time")
-);
-
-let userJwtService = new JwtService(
-  config.get("adminAccess_key"),
-  config.get("adminRefresh_key"),
-  config.get("adminAccess_time"),
-  config.get("adminRefresh_time")
-);
-
-module.exports = {
-  authorJwtService,
-  userJwtService,
-  adminJwtService,
-};
+export const userJwtService = new JwtService({
+  accessSecret: config.get("jwt.user.accessSecret"),
+  refreshSecret: config.get("jwt.user.refreshSecret"),
+  accessExpiresIn: config.get("jwt.user.accessExpiresIn"),
+  refreshExpiresIn: config.get("jwt.user.refreshExpiresIn"),
+});

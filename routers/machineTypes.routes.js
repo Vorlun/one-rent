@@ -7,6 +7,7 @@ import {
   getOne,
 } from "../controllers/machineTypes.controller.js";
 
+
 import {
   createMachineTypeSchema,
   updateMachineTypeSchema,
@@ -14,13 +15,19 @@ import {
 
 import { validateBody, validateParams } from "../middlewares/validate.js";
 import { idParamSchema } from "../validations/id_param.validation.js";
+import authGuard from "../middlewares/guards/auth.guard.js";
+import requiredRoles from "../middlewares/guards/role.guard.js"
 
 const router = Router();
 
 router
   .route("/")
-  .post(validateBody(createMachineTypeSchema), create)
-  .get(getAll);
+  .post(
+    validateBody(createMachineTypeSchema),
+    authGuard,
+    requiredRoles(["admin"]),
+    create
+  ).get(authGuard,requiredRoles(["admin"]), (getAll));
 
 router
   .route("/:id")

@@ -23,7 +23,6 @@ export const create = async (req, res, next) => {
       role,
     });
 
-    // Javob yuborish (passwordni ko‘rsatmaymiz)
     res.status(201).json({
       success: true,
       message: "User created successfully",
@@ -37,7 +36,6 @@ export const create = async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Unikal constraint xatosi (email yoki phone)
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -48,7 +46,6 @@ export const create = async (req, res, next) => {
   }
 };
 
-// Barcha foydalanuvchilarni olish (pagination bilan)
 export const getAll = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -56,7 +53,7 @@ export const getAll = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Users.findAndCountAll({
-      attributes: { exclude: ["password"] }, // passwordni chiqarib tashlaymiz
+      attributes: { exclude: ["password"] },
       order: [["id", "ASC"]],
       limit,
       offset,
@@ -77,7 +74,6 @@ export const getAll = async (req, res, next) => {
   }
 };
 
-// Bitta foydalanuvchini olish (ID bo‘yicha)
 export const getOne = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -90,7 +86,6 @@ export const getOne = async (req, res, next) => {
       });
     }
 
-    // passwordni olib tashlash
     const { password, ...userData } = user.toJSON();
 
     res.status(200).json({
