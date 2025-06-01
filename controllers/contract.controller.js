@@ -2,6 +2,8 @@ import { Contracts } from "../models/contract.model.js";
 import { Machines } from "../models/machines.model.js";
 import { MachineTypes } from "../models/machineTypes.model.js";
 import { Users } from "../models/users.model.js";
+import { Op } from "sequelize";
+
 
 const findById = async (id) => {
   return await Contracts.findByPk(id, {
@@ -136,6 +138,64 @@ export const remove = async (req, res, next) => {
 
     await contract.destroy();
     res.status(200).json({ success: true, message: "Deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCancelledContractsInRange = async (req, res, next) => {
+  try {
+    const { start, end } = req.query;
+
+    if (!start || !end) {
+      return res.status(400).json({
+        success: false,
+        message: "Iltimos, start va end sanalarni yuboring. Format: YYYY-MM-DD",
+      });
+    }
+
+    const contracts = await Contracts.findAll({
+      where: {
+        status: "cancelled",
+        start_time: {
+          [Op.gte]: new Date(start),
+        },
+        end_time: {
+          [Op.lte]: new Date(end),
+        },
+      },
+      order: [["start_time", "DESC"]],
+      include: [
+        {
+          model: Users,
+          as: "customer",
+          attributes: ["id", "full_name", "email", "phone", "role"],
+        },
+        {
+          model: Machines,
+          as: "machines",
+          attributes: ["id", "name", "location", "price_per_hour", "status"],
+          include: [
+            {
+              model: Users,
+              as: "owner",
+              attributes: ["id", "full_name", "email", "phone"],
+            },
+            {
+              model: MachineTypes,
+              as: "machine_type",
+              attributes: ["id", "type_name"],
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      count: contracts.length,
+      data: contracts,
+    });
   } catch (error) {
     next(error);
   }

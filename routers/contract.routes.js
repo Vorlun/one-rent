@@ -5,6 +5,7 @@ import {
   remove,
   getAll,
   getOne,
+  getCancelledContractsInRange,
 } from "../controllers/contract.controller.js";
 
 import {
@@ -29,6 +30,7 @@ router
     create
   )
   .get(authGuard, requiredRoles(["admin", "manager"]), getAll);
+router.route("/cancelled").get(authGuard, requiredRoles(["admin", "manager"]), getCancelledContractsInRange);
 
 router
   .route("/:id")
